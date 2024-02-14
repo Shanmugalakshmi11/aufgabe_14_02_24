@@ -8,5 +8,6 @@ const AppRouter = Router();
 AppRouter.use("/auth", AuthRouter);
 AppRouter.use("/user", UserRouter);
 AppRouter.use("/todos", todosRouter);
+// AppRouter.use("/members", todosRouter);
 
 module.exports = { AppRouter };

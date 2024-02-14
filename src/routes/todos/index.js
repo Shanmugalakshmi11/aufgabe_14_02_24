@@ -3,10 +3,15 @@ const { StatusCodes, ReasonPhrases } = require("http-status-codes");
 
 // Simulated database for todos
 let todos = [
-  { id: 1, task: "Complete project", completed: false },
-  { id: 2, task: "Review code", completed: true },
-  { id: 3, task: "QA", completed: true },
-  { id: 4, task: "Developer Team", completed: false },
+  {
+    id: 1,
+    task: "Complete project",
+    completed: false,
+    members: ["user1", "user2"],
+  },
+  { id: 2, task: "Review code", completed: true, members: ["user3"] },
+  { id: 3, task: "QA", completed: true, members: ["user4", "user5"] },
+  { id: 4, task: "Developer Team", completed: false, members: ["user6"] },
 ];
 
 const todosRouter = Router();
@@ -24,7 +29,7 @@ todosRouter.get("/id", (req, res) => {
     return;
   }
   const usertodos = todos.find((item) => item.id === todosId);
-  res.status(StatusCodes.OK).json({ profile: usertodos });
+  res.status(StatusCodes.OK).json({ todos: usertodos });
 });
 
 //  ***PUT REQUESTS***
@@ -44,7 +49,7 @@ todosRouter.put("/update", (req, res) => {
 
 //  ***DELETE REQUESTS***
 todosRouter.delete("/delete", (req, res) => {
-  const { todosId } = req.body;
+  const { todosId } = req.query;
 
   const deletedProfiles = todos.filter((item) => item.id !== todosId);
   todos = deletedProfiles;
@@ -54,8 +59,11 @@ todosRouter.delete("/delete", (req, res) => {
 
 // PUT - /todos/mark: Mark todo completed
 todosRouter.put("/mark", (req, res) => {
-  const { taskId } = req.body;
-  const todoToMark = todos.find((todo) => todo.id === taskId);
+  console.log(req.query.todosId);
+  const { todosId } = req.query;
+  console.log(todosId);
+  console.log(todos.filter((item) => item.id == todosId));
+  const todoToMark = todos.filter((item) => item.id == todosId);
 
   if (!todoToMark) {
     return res.status(404).json({ error: "Todo not found" });
@@ -85,4 +93,49 @@ todosRouter.get("/byuserid", (req, res) => {
   const userTodos = todos.filter((todo) => todo.userId === userId);
   res.json({ userTodos });
 });
+
+// POST - /v1/members/add: Add Members
+
+todosRouter.post("/members/add", (req, res) => {
+  const { todosId, members } = req.body;
+  console.log(todosId);
+  const todo = todos.find((item) => item.id === todosId);
+
+  if (!todo) {
+    return res.status(404).json({ error: "Todo not found" });
+  }
+
+  // Add members to the specified todo
+  todo.members = [...new Set([...todo.members, ...members])];
+
+  res.json({ addedMembers: members });
+});
+
+// DELETE - /v1/members/remove: Remove Members
+todosRouter.delete("/members/remove", (req, res) => {
+  const { todosId, members } = req.body;
+  const todo = todos.find((item) => item.id === todosId);
+
+  if (!todo) {
+    return res.status(404).json({ error: "Todo not found" });
+  }
+
+  // Remove members from the specified todo
+  todo.members = todo.members.filter((member) => !members.includes(member));
+
+  res.json({ removedMembers: members });
+});
+
+// GET - /v1/members/read: Read Members
+todosRouter.get("/members/read", (req, res) => {
+  const { todosId } = req.query;
+  const todo = todos.find((item) => item.id === parseInt(todosId));
+
+  if (!todo) {
+    return res.status(404).json({ error: "Todo not found" });
+  }
+
+  res.json({ members: todo.members });
+});
+
 module.exports = { todosRouter };
